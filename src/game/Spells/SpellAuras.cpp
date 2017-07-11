@@ -665,22 +665,25 @@ void AreaAura::Update(uint32 diff)
 
                     Aura *aur = i->second->GetAuraByEffectIndex(m_effIndex);
 
-                    if (aur)
-                    {
-                        // If this unit is the caster, update the tick. Units won't tick their
-                        // own area auras. Make sure we don't double tick if this unit is the caster
-                        // though
-                        if (i->second->GetCasterGuid() == GetCasterGuid() && i->second->GetTarget()->GetObjectGuid() != GetCasterGuid())
-                        {
-                            aur->UpdateForAffected(diff);
-                        }
-
-                        // in generic case not allow stacking area auras
-                        apply = false;
-                        break;
-                    }
-                    else
+                    if (!aur)
                         continue;
+                    
+                    switch(m_areaAuraType)
+                    {
+                        case AREA_AURA_PARTY:
+                            // disallow stacking of auras from same caster
+                            // allows stacking of party-auras from totems/pets that follow stacking rules
+                            if (i==this || i->second->GetCasterGuid()->GetTypeId()==TYPEID_PLAYER ||  !actualSpellInfo->SpellFamilyName)
+                                apply=false;
+                            break;
+                        default:
+                            // generic case in which stacking area auras is not allowed
+                            apply=false;
+                            break;
+                    }
+                    
+                    if (!apply)
+                        break;
                 }
 
                 if (!apply)
